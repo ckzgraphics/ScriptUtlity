@@ -70,6 +70,10 @@ public class BaseWebDriver {
         try {
             for (String symbolName : symbol) {
 
+                if(symbolName.equalsIgnoreCase("Summary") || symbolName.equalsIgnoreCase("summary")){
+                    continue;
+                }
+
                 newDateData = new ArrayList<String>();
                 System.out.println("\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
                         +"\nExecuting for : " + symbolName);
