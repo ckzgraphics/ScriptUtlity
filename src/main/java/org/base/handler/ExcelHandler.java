@@ -1,18 +1,13 @@
 package org.base.handler;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
@@ -37,6 +32,8 @@ public class ExcelHandler {
     private Map<Integer, String> columnHeading = null;
 
     private int totalNumberOfSheets = 0;
+
+    private FileInputStream inputStream = null;
 
     /**
      * To read the excel file call method: readExcelFile
@@ -77,15 +74,21 @@ public class ExcelHandler {
         String fileExtension = null;
         try {
             fileExtension = FilenameUtils.getExtension(fileName);
-            LOG.info("File extension: {}", fileExtension);
-            this.workbook = WorkbookFactory.create(new File(filePath.concat(File.separator).concat(fileName)));
+            System.out.println("Reading File: " + filePath + fileName);
+//            LOG.info("File extension: {}", fileExtension);
+            inputStream = new FileInputStream(new File(filePath.concat(File.separator).concat(fileName)));
+            this.workbook = WorkbookFactory.create(inputStream);
+            System.out.println("workbook: " + workbook);
             isComplete = true;
             totalNumberOfSheets = workbook.getNumberOfSheets();
         } catch (NullPointerException e) {
+            e.printStackTrace();
             LOG.error("Error while reading excel file {} :: {}", fileName, e.getMessage());
         } catch (IOException e) {
+            e.printStackTrace();
             LOG.error("IO error while reading excel file {} :: {}", fileName, e.getMessage());
         } catch (Exception e) {
+            e.printStackTrace();
             LOG.error("Error while reading excel file {} :: {}", fileName, e.getMessage());
         }
         return isComplete;
@@ -98,7 +101,7 @@ public class ExcelHandler {
             }
 
         } catch(Exception e){
-            System.out.println("Error while Closing excel");
+            System.out.println("Error while closing workbook");
             e.printStackTrace();
         }
     }
@@ -431,7 +434,7 @@ public class ExcelHandler {
         return sheetNames;
     }
 
-    public void addRowData(String sheetName, String filePath, String fileName, List<String> data){
+    public void addRowData(String sheetName, List<String> data){
 
         setSheet(sheetName);
         Row row = sheet.createRow(this.totalRowCount + 1);
@@ -441,32 +444,32 @@ public class ExcelHandler {
                 row.createCell(colIndex).setCellValue(data.get(colIndex));
             }
         } else {
-            System.out.println("MISMATCH \nSHEET COLs: "+this.totalColumnCount);
-            System.out.println("DATA  SIZE: "+data.size());
-
+            System.out.println("DATA SIZE: "+data.size());
             // SAVE TO FIRST 13 COLs ONLY
             for (int colIndex = 0; colIndex < 13; colIndex++) {
                 row.createCell(colIndex).setCellValue(data.get(colIndex));
             }
         }
+    }
 
+    public  void saveFile(String filePath, String fileName){
         OutputStream fileOut = null;
         try {
+            if(Objects.nonNull(inputStream))
+                inputStream.close();
             fileOut = new FileOutputStream(filePath + fileName);
             workbook.write(fileOut);
-//            IOUtils.close(fileOut);
         } catch(Exception e){
             System.out.println("Error while saving the file");
             e.printStackTrace();
         } finally {
-//             if(Objects.nonNull(fileOut)){
-//                 try {
-//                     fileOut.flush();
-//                     fileOut.close();
-//                 } catch (Exception e){e.printStackTrace();}
-//             }
+             if(Objects.nonNull(fileOut)){
+                 try {
+                     fileOut.flush();
+                     fileOut.close();
+                 } catch (Exception e){e.printStackTrace();}
+             }
         }
-
     }
 
 

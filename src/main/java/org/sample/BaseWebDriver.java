@@ -35,7 +35,7 @@ public class BaseWebDriver {
             symbol = exe.getSheetNameList();
             initDriver();
         } else {
-            System.out.println("Terminating utility");
+            System.out.println("Terminating utility: Total Sheets found: " + sheetCount);
         }
     }
 
@@ -60,12 +60,13 @@ public class BaseWebDriver {
                 System.out.println("\nExecuting for: " + symbolName);
 //                exe.printSheetData(symbolName);
 
+                // OPEN BROWSER
                 driver.get(Base.BASE_URL.concat(symbolName));
 
+                // WAIT FOR PAGE TO LOAD
                 sleep(3000);
+                // SCROLL TILL TABLE
                 scroll(500);
-
-//                System.out.println("\n" + driver.getPageSource());
 
                 driver.findElement(By.xpath(".//h2[contains(.,'Historical Data')]")).click();
                 sleep(3000);
@@ -77,6 +78,7 @@ public class BaseWebDriver {
                 List<WebElement> tableData = driver.findElements(By.xpath(".//table[@id='equityHistoricalTable']/tbody/tr[1]/td"));
                 for (int i = 0; i < tableHeaders.size(); i++) {
 
+                    // IGNORE COL- SERIES
                     if (i == 1) {
                         continue;
                     }
@@ -86,18 +88,20 @@ public class BaseWebDriver {
                     newDateData.add(newDateDataStr);
                 }
 
-                exe.addRowData(symbolName, Base.PATH_DATA, Base.WORKBOOK_NAME, newDateData);
+                // ADD DATA TO SHEET
+                exe.addRowData(symbolName, newDateData);
             }
+
+            // SAVE WORKBOOK TO DISC
+            exe.saveFile(Base.PATH_DATA, Base.WORKBOOK_NAME);
+
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-//            if (Objects.nonNull(exe)) {
-//
-//            }
-            if (Objects.nonNull(driver)) {
-                driver.quit();
+            if (Objects.nonNull(exe))
                 exe.closeWorkbook();
-            }
+            if (Objects.nonNull(driver))
+                driver.quit();
         }
     }
 
