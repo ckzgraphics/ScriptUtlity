@@ -12,13 +12,13 @@
 </p>
 
 #### Prerequisite
-- Java 8
+- Java 8 ([Download](https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html))
 - Chrome Browser
 - Good internet connection
 
 #### Setup
 - Download the project
-- Keep the excel file in "data" directory
+- Keep the Excel file in "data" directory
 
 #### Windows Execution
 - Open command prompt and navigate to the home directory of the project. For eg- 
