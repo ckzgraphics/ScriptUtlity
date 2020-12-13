@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
@@ -97,7 +98,7 @@ public class ExcelHandler {
             }
 
         } catch(Exception e){
-            System.out.println("Error shile Closing excel");
+            System.out.println("Error while Closing excel");
             e.printStackTrace();
         }
     }
@@ -111,8 +112,10 @@ public class ExcelHandler {
         this.sheet = workbook.getSheet(sheetName);
         System.out.println("Reading sheet: " + sheetName);
         LOG.info("Reading sheet: {}", sheetName);
-        if (this.sheet != null) {
-            this.rowZero = this.sheet.getRow(0);
+        if(this.sheet != null) {
+            // IN POC ROW 0 HAS NUM VALUE
+            // AND ROW 1 IS COLS VALUE
+            this.rowZero = this.sheet.getRow(1);
             this.totalRowCount = getActualRowCount();
             this.totalColumnCount = getActualColumnCount();
             this.columnHeading = getColumnHeading(rowZero);
@@ -243,34 +246,40 @@ public class ExcelHandler {
      * @return String value of the cell
      */
     public String getCellStringValue(Cell cell) {
-        CellType cellType = cell.getCellType();
+        CellType cellType = null;
         String cellValue = "";
-        if (cellType != null) {
-            switch (cellType) {
-                case STRING:
-                    cellValue = cell.getStringCellValue();
-                    break;
-                case NUMERIC:
-                    cellValue = Double.toString((cell.getNumericCellValue()));
-                    break;
-                case BOOLEAN:
-                    cellValue = Boolean.toString(cell.getBooleanCellValue());
-                    break;
-                case _NONE:
-                    cellValue = "";
-                    break;
-                case BLANK:
-                    cellValue = "";
-                    break;
-                case ERROR:
-                    cellValue = Byte.toString(cell.getErrorCellValue());
-                    break;
-                case FORMULA:
-                    cellValue = Integer.toString(((int) cell.getNumericCellValue()));
-                    break;
-                default:
-                    cellValue = "";
+        if(Objects.nonNull(cell)){
+            cellType = cell.getCellType();
+            if (cellType != null) {
+                switch (cellType) {
+                    case STRING:
+                        cellValue = cell.getStringCellValue();
+                        break;
+                    case NUMERIC:
+                        cellValue = Double.toString((cell.getNumericCellValue()));
+                        break;
+                    case BOOLEAN:
+                        cellValue = Boolean.toString(cell.getBooleanCellValue());
+                        break;
+                    case _NONE:
+                        cellValue = "";
+                        break;
+                    case BLANK:
+                        cellValue = "";
+                        break;
+                    case ERROR:
+                        cellValue = Byte.toString(cell.getErrorCellValue());
+                        break;
+                    case FORMULA:
+//                    cellValue = Integer.toString(((int) cell.getNumericCellValue()));
+                        cellValue = "NaN";
+                        break;
+                    default:
+                        cellValue = "";
+                }
             }
+        } else {
+            System.out.println("NC");
         }
         return cellValue;
     }
@@ -327,6 +336,7 @@ public class ExcelHandler {
                         break;
                     }
                 }
+                System.out.println("["+rowIndex+","+colIndex+"]");
                 tempStr += "||" + getCellStringValue(this.cell);
             }
             if (lastRowFlag)
@@ -433,16 +443,18 @@ public class ExcelHandler {
         } else {
             System.out.println("MISMATCH \nSHEET COLs: "+this.totalColumnCount);
             System.out.println("DATA  SIZE: "+data.size());
-            for (int colIndex = 0; colIndex < this.totalColumnCount; colIndex++) {
-                row.createCell(colIndex).setCellValue("NULL");
+
+            // SAVE TO FIRST 13 COLs ONLY
+            for (int colIndex = 0; colIndex < 13; colIndex++) {
+                row.createCell(colIndex).setCellValue(data.get(colIndex));
             }
         }
-
 
         OutputStream fileOut = null;
         try {
             fileOut = new FileOutputStream(filePath + fileName);
             workbook.write(fileOut);
+//            IOUtils.close(fileOut);
         } catch(Exception e){
             System.out.println("Error while saving the file");
             e.printStackTrace();

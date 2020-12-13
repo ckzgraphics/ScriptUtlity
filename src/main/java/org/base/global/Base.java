@@ -6,7 +6,7 @@ public class Base {
 
     public static final String BASE_PATH = System.getProperty("user.dir").concat(File.separator);
     public static final String PATH_DATA = BASE_PATH.concat("data").concat(File.separator);
-
-    public static final String WORKBOOK_NAME = "SCRIPTS_DATA.xlsx";
+    public static final String BASE_URL = "https://www.nseindia.com/get-quotes/equity?symbol=";
+    public static final String WORKBOOK_NAME = "POC.xlsx";
 
 }
