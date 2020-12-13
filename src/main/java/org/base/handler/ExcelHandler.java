@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.poi.ss.format.CellFormat;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
@@ -117,7 +118,7 @@ public class ExcelHandler {
         if(this.sheet != null) {
             // IN POC ROW 0 HAS NUM VALUE
             // AND ROW 1 IS COLS VALUE
-            this.rowZero = this.sheet.getRow(1);
+            this.rowZero = this.sheet.getRow(0);
             this.totalRowCount = getActualRowCount();
             this.totalColumnCount = getActualColumnCount();
             this.columnHeading = getColumnHeading(rowZero);
@@ -440,17 +441,30 @@ public class ExcelHandler {
         setSheet(sheetName);
         Row row = sheet.createRow(this.totalRowCount + 1);
 
-        if(this.totalColumnCount == data.size()){
+//        if(this.totalColumnCount != data.size()){
             for (int colIndex = 0; colIndex < this.totalColumnCount; colIndex++) {
-                row.createCell(colIndex).setCellValue(data.get(colIndex));
-            }
-        } else {
-            System.out.println("Count of data to be added: "+data.size());
-            // SAVE TO FIRST 13 COLs ONLY
-            for (int colIndex = 0; colIndex < 13; colIndex++) {
-                row.createCell(colIndex).setCellValue(data.get(colIndex));
-            }
-        }
+                // ADD DATA FROM LIST TILL COL NO 13
+                if (colIndex < 13) {
+                    row.createCell(colIndex).setCellValue(data.get(colIndex));
+                }
+                // COPY CELL FORMULA FROM COL 13 ONWARDS
+                else if (colIndex >= 13) {
+                    {
+                        // COPY CELL TYPE FROM LAST ROW
+                        Row rowTemp = sheet.getRow(totalRowCount);
+                        String cellFormula = rowTemp.getCell(colIndex).getCellFormula();
+                        System.out.println("colIndex: " + colIndex + " | cellFormula: " + cellFormula);
+                        row.createCell(colIndex).setCellFormula(cellFormula);
+                    }
+                }
+            } // FOR END
+//        } else {
+//            System.out.println("Count of data to be added: "+data.size());
+//            // SAVE TO FIRST 13 COLs ONLY
+//            for (int colIndex = 0; colIndex < 13; colIndex++) {
+//                row.createCell(colIndex).setCellValue(data.get(colIndex));
+//            }
+//        }
     }
 
     public  void saveFile(String filePath, String fileName){
