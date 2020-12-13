@@ -75,21 +75,20 @@ public class ExcelHandler {
         try {
             fileExtension = FilenameUtils.getExtension(fileName);
             System.out.println("Reading File: " + filePath + fileName);
-//            LOG.info("File extension: {}", fileExtension);
+            LOG.info("File extension: {}", fileExtension);
             inputStream = new FileInputStream(new File(filePath.concat(File.separator).concat(fileName)));
             this.workbook = WorkbookFactory.create(inputStream);
-            System.out.println("workbook: " + workbook);
             isComplete = true;
             totalNumberOfSheets = workbook.getNumberOfSheets();
         } catch (NullPointerException e) {
+            System.out.println("Error while reading excel file " +  fileName + " :: " + e.getMessage());
             e.printStackTrace();
-            LOG.error("Error while reading excel file {} :: {}", fileName, e.getMessage());
         } catch (IOException e) {
+            System.out.println("IO error while reading excel file " +  fileName + " :: " + e.getMessage());
             e.printStackTrace();
-            LOG.error("IO error while reading excel file {} :: {}", fileName, e.getMessage());
         } catch (Exception e) {
+            System.out.println("Error while reading excel file " +  fileName + " :: " + e.getMessage());
             e.printStackTrace();
-            LOG.error("Error while reading excel file {} :: {}", fileName, e.getMessage());
         }
         return isComplete;
     }
@@ -425,12 +424,14 @@ public class ExcelHandler {
 
     public List<String> getSheetNameList(){
 
+        String sheetNamesPrint = "";
         List<String> sheetNames = new ArrayList<>();
+        System.out.print("\nSheetNames => ");
         for(int i=0; i<totalNumberOfSheets; i++) {
-            System.out.println("SheetName => " + workbook.getSheetAt(i).getSheetName());
+            sheetNamesPrint += i + ":" + workbook.getSheetAt(i).getSheetName() + "|";
             sheetNames.add(workbook.getSheetName(i));
         }
-
+        System.out.print(sheetNamesPrint + "\n\n");
         return sheetNames;
     }
 
@@ -444,7 +445,7 @@ public class ExcelHandler {
                 row.createCell(colIndex).setCellValue(data.get(colIndex));
             }
         } else {
-            System.out.println("DATA SIZE: "+data.size());
+            System.out.println("Count of data to be added: "+data.size());
             // SAVE TO FIRST 13 COLs ONLY
             for (int colIndex = 0; colIndex < 13; colIndex++) {
                 row.createCell(colIndex).setCellValue(data.get(colIndex));

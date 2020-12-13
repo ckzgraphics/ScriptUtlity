@@ -10,9 +10,9 @@ import java.util.List;
 
 public class App 
 {
-    public static void main( String[] args )
-    {
-        BaseWebDriver b = new BaseWebDriver();
-        b.start();
+    public static void main( String[] args ) {
+        String propWorkbookName = System.getProperty("book");
+        String url = System.getProperty("url");
+        new BaseWebDriver(propWorkbookName, url);
     }
 }
