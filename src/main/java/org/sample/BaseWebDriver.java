@@ -83,7 +83,6 @@ public class BaseWebDriver {
                 try {
                     // OPEN BROWSER
                     driver.get(url.concat(symbolName));
-//                driver.get(Base.BASE_URL.concat(symbolName));
 
                     // WAIT FOR PAGE TO LOAD
                     sleep(3000);

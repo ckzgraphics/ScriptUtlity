@@ -9,12 +9,19 @@ import java.util.Objects;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.poi.ss.format.CellFormat;
+import org.apache.poi.ss.formula.FormulaParser;
+import org.apache.poi.ss.formula.FormulaRenderer;
+import org.apache.poi.ss.formula.FormulaType;
+import org.apache.poi.ss.formula.ptg.Ptg;
+import org.apache.poi.ss.formula.ptg.RefPtgBase;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFEvaluationWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +35,7 @@ public class ExcelHandler {
     private Row rowZero = null;
     private Cell cell = null;
 
+    private int sheetIndex = 0;
     private int totalRowCount = 0;
     private int totalColumnCount = 0;
     private Map<Integer, String> columnHeading = null;
@@ -45,8 +53,8 @@ public class ExcelHandler {
     /**
      * Reads excel workbook (call method: setSheet to read sheet)
      *
-     * @param filePath  Absolute path to the file directory
-     * @param fileName  Excel file name with extension
+     * @param filePath Absolute path to the file directory
+     * @param fileName Excel file name with extension
      */
     public ExcelHandler(String filePath, String fileName) {
         setWorkbook(filePath, fileName);
@@ -82,62 +90,55 @@ public class ExcelHandler {
             isComplete = true;
             totalNumberOfSheets = workbook.getNumberOfSheets();
         } catch (NullPointerException e) {
-            System.out.println("Error while reading excel file " +  fileName + " :: " + e.getMessage());
+            System.out.println("Error while reading excel file " + fileName + " :: " + e.getMessage());
             e.printStackTrace();
         } catch (IOException e) {
-            System.out.println("IO error while reading excel file " +  fileName + " :: " + e.getMessage());
+            System.out.println("IO error while reading excel file " + fileName + " :: " + e.getMessage());
             e.printStackTrace();
         } catch (Exception e) {
-            System.out.println("Error while reading excel file " +  fileName + " :: " + e.getMessage());
+            System.out.println("Error while reading excel file " + fileName + " :: " + e.getMessage());
             e.printStackTrace();
         }
         return isComplete;
     }
 
-    public void closeWorkbook(){
+    public void closeWorkbook() {
         try {
-            if(Objects.nonNull(this.workbook)){
+            if (Objects.nonNull(this.workbook)) {
                 workbook.close();
             }
 
-        } catch(Exception e){
+        } catch (Exception e) {
             System.out.println("Error while closing workbook");
             e.printStackTrace();
         }
     }
 
     /**
-     *
      * @param sheetName
      */
-    public boolean setSheet(String sheetName) {
-        boolean isComplete = false;
+    public int setSheet(String sheetName) {
         this.sheet = workbook.getSheet(sheetName);
         System.out.println("Reading sheet: " + sheetName);
         LOG.info("Reading sheet: {}", sheetName);
-        if(this.sheet != null) {
-            // IN POC ROW 0 HAS NUM VALUE
-            // AND ROW 1 IS COLS VALUE
-            this.rowZero = this.sheet.getRow(0);
-            this.totalRowCount = getActualRowCount();
-            this.totalColumnCount = getActualColumnCount();
-            this.columnHeading = getColumnHeading(rowZero);
-            /*
-             * FOLLOWING DEFAULT METHOD DOES NOT WORK AS EXPECTED FOR EXCEL FILE CONVERTED
-             * FROM GOOGLE SHEET HENCE CREATED CUSTOM METHOD getActualColumnCount()
-             */
-            // this.totalColumnCount = sheet.getRow(0).getLastCellNum();
-            System.out.println("Rows:  "+this.totalRowCount+"| Columns: "+this.totalColumnCount);
-            LOG.info("Rows: {} | Columns: {}", this.totalRowCount, this.totalColumnCount);
-            isComplete = true;
-        } else {
-            isComplete = true;
-        }
-        return isComplete;
+        // IN POC ROW 0 HAS NUM VALUE
+        // AND ROW 1 IS COLS VALUE
+        this.rowZero = this.sheet.getRow(0);
+        this.totalRowCount = getActualRowCount();
+        this.totalColumnCount = getActualColumnCount();
+        this.columnHeading = getColumnHeading(rowZero);
+        /*
+         * FOLLOWING DEFAULT METHOD DOES NOT WORK AS EXPECTED FOR EXCEL FILE CONVERTED
+         * FROM GOOGLE SHEET HENCE CREATED CUSTOM METHOD getActualColumnCount()
+         */
+        // this.totalColumnCount = sheet.getRow(0).getLastCellNum();
+        System.out.println("Rows:  " + this.totalRowCount + "| Columns: " + this.totalColumnCount);
+        LOG.info("Rows: {} | Columns: {}", this.totalRowCount, this.totalColumnCount);
+        sheetIndex = workbook.getSheetIndex(sheetName);
+        return sheetIndex;
     }
 
     /**
-     *
      * @param sheetNumber
      */
     public void setSheet(int sheetNumber) {
@@ -177,7 +178,6 @@ public class ExcelHandler {
     }
 
     /**
-     *
      * @return Two row count
      */
     public int getRowCount() {
@@ -185,7 +185,6 @@ public class ExcelHandler {
     }
 
     /**
-     *
      * @return Total column count
      */
     public int getColumnCount() {
@@ -193,7 +192,6 @@ public class ExcelHandler {
     }
 
     /**
-     *
      * @return Column Count
      */
     private int getActualColumnCount() {
@@ -211,7 +209,6 @@ public class ExcelHandler {
     }
 
     /**
-     *
      * @return Row Count
      */
     private int getActualRowCount() {
@@ -229,7 +226,6 @@ public class ExcelHandler {
     }
 
     /**
-     *
      * @param rowZero Row object containing Zeroth row
      * @return Mapping of Column Index and Column Name
      */
@@ -244,14 +240,13 @@ public class ExcelHandler {
     }
 
     /**
-     *
      * @param cell
      * @return String value of the cell
      */
     public String getCellStringValue(Cell cell) {
         CellType cellType = null;
         String cellValue = "";
-        if(Objects.nonNull(cell)){
+        if (Objects.nonNull(cell)) {
             cellType = cell.getCellType();
             if (cellType != null) {
                 switch (cellType) {
@@ -288,7 +283,6 @@ public class ExcelHandler {
     }
 
     /**
-     *
      * @param cell
      * @return If NULL/BLANK: true | If value found: false
      */
@@ -339,7 +333,7 @@ public class ExcelHandler {
                         break;
                     }
                 }
-                System.out.println("["+rowIndex+","+colIndex+"]");
+                System.out.println("[" + rowIndex + "," + colIndex + "]");
                 tempStr += "||" + getCellStringValue(this.cell);
             }
             if (lastRowFlag)
@@ -350,7 +344,6 @@ public class ExcelHandler {
     }
 
     /**
-     *
      * @param columnIndex
      * @return Column Name
      */
@@ -359,7 +352,6 @@ public class ExcelHandler {
     }
 
     /**
-     *
      * @param columnName
      * @return Column Index
      */
@@ -377,7 +369,6 @@ public class ExcelHandler {
     }
 
     /**
-     *
      * @return Excel data
      */
     public List<Map<String, String>> getSheetData_String() {
@@ -421,14 +412,16 @@ public class ExcelHandler {
         return data;
     }
 
-    public int getNumberOfSheets(){return totalNumberOfSheets;}
+    public int getNumberOfSheets() {
+        return totalNumberOfSheets;
+    }
 
-    public List<String> getSheetNameList(){
+    public List<String> getSheetNameList() {
 
         String sheetNamesPrint = "";
         List<String> sheetNames = new ArrayList<>();
         System.out.print("\nSheetNames => ");
-        for(int i=0; i<totalNumberOfSheets; i++) {
+        for (int i = 0; i < totalNumberOfSheets; i++) {
             sheetNamesPrint += i + ":" + workbook.getSheetAt(i).getSheetName() + "|";
             sheetNames.add(workbook.getSheetName(i));
         }
@@ -436,54 +429,81 @@ public class ExcelHandler {
         return sheetNames;
     }
 
-    public void addRowData(String sheetName, List<String> data){
+    public void addRowData(String sheetName, List<String> data) {
 
         setSheet(sheetName);
         Row row = sheet.createRow(this.totalRowCount + 1);
 
-//        if(this.totalColumnCount != data.size()){
-            for (int colIndex = 0; colIndex < this.totalColumnCount; colIndex++) {
-                // ADD DATA FROM LIST TILL COL NO 13
-                if (colIndex < 13) {
-                    row.createCell(colIndex).setCellValue(data.get(colIndex));
+        for (int colIndex = 0; colIndex < this.totalColumnCount; colIndex++) {
+            // ADD DATA FROM LIST TILL COL NO 13
+            if (colIndex < 13) {
+                row.createCell(colIndex).setCellValue(data.get(colIndex));
+            }
+            // COPY CELL FORMULA FROM COL 13 ONWARDS
+            else if (colIndex >= 13) {
+                {
+                    // COPY CELL TYPE FROM LAST ROW
+                    Row rowTemp = sheet.getRow(totalRowCount);
+                    String cellFormula = rowTemp.getCell(colIndex).getCellFormula();
+                    System.out.println("colIndex: " + colIndex + " | cellFormula: " + cellFormula);
+                    cellFormula = copyFormula(cellFormula);
+                    row.createCell(colIndex).setCellFormula(cellFormula);
                 }
-                // COPY CELL FORMULA FROM COL 13 ONWARDS
-                else if (colIndex >= 13) {
-                    {
-                        // COPY CELL TYPE FROM LAST ROW
-                        Row rowTemp = sheet.getRow(totalRowCount);
-                        String cellFormula = rowTemp.getCell(colIndex).getCellFormula();
-                        System.out.println("colIndex: " + colIndex + " | cellFormula: " + cellFormula);
-                        row.createCell(colIndex).setCellFormula(cellFormula);
-                    }
-                }
-            } // FOR END
-//        } else {
-//            System.out.println("Count of data to be added: "+data.size());
-//            // SAVE TO FIRST 13 COLs ONLY
-//            for (int colIndex = 0; colIndex < 13; colIndex++) {
-//                row.createCell(colIndex).setCellValue(data.get(colIndex));
-//            }
-//        }
+            }
+        } // FOR END
     }
 
-    public  void saveFile(String filePath, String fileName){
+    public String copyFormula(String cellFormula){
+        try {
+            XSSFEvaluationWorkbook workbookWrapper =
+                    XSSFEvaluationWorkbook.create((XSSFWorkbook) workbook);
+            /* parse formula */
+            Ptg[] ptgs = FormulaParser.parse(cellFormula, workbookWrapper,
+                    FormulaType.CELL, sheetIndex /*sheet index*/ );
+
+            System.out.println("\n- - - - - - Updating Formula - - - ");
+            System.out.println("Old: " + cellFormula);
+            /* re-calculate cell references */
+            for( Ptg ptg  : ptgs ) {
+                if( ptg instanceof RefPtgBase)    //base class for cell reference "things"
+                {
+                    RefPtgBase ref = (RefPtgBase)ptg;
+                    if( ref.isColRelative() )
+                        ref.setColumn( ref.getColumn() + 0 );
+                    if( ref.isRowRelative() )
+                        ref.setRow( ref.getRow() + 1 );
+//                    System.out.println(" ref: " + ref);
+                }
+            } // FOR END
+            cellFormula = FormulaRenderer.toFormulaString(workbookWrapper, ptgs);
+            System.out.println("NEW: " + cellFormula);
+            System.out.println("- - - - - - - - - - - - - - - -\n");
+        } catch (Exception e) {
+            System.out.println(" Err while copying formula" );
+            e.printStackTrace();
+        }
+        return cellFormula;
+    }
+
+    public void saveFile(String filePath, String fileName) {
         OutputStream fileOut = null;
         try {
-            if(Objects.nonNull(inputStream))
+            if (Objects.nonNull(inputStream))
                 inputStream.close();
             fileOut = new FileOutputStream(filePath + fileName);
             workbook.write(fileOut);
-        } catch(Exception e){
+        } catch (Exception e) {
             System.out.println("Error while saving the file");
             e.printStackTrace();
         } finally {
-             if(Objects.nonNull(fileOut)){
-                 try {
-                     fileOut.flush();
-                     fileOut.close();
-                 } catch (Exception e){e.printStackTrace();}
-             }
+            if (Objects.nonNull(fileOut)) {
+                try {
+                    fileOut.flush();
+                    fileOut.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
