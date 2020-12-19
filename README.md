@@ -12,8 +12,9 @@
 </p>
 
 #### Prerequisite
-- Java 8 ([Download](https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html))
-- Chrome Browser
+- Download & install Java 8 ([Download](https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html))
+- Set JAVA_HOME environment variable ([Windows](https://mkyong.com/java/how-to-set-java_home-on-windows-10/), [MacOS](https://www.baeldung.com/java-home-on-windows-7-8-10-mac-os-x-linux))
+- Download & install Chrome Browser
 - Good internet connection
 
 #### Setup
@@ -27,7 +28,7 @@
     ```
 - Execute the following command:
    ```sh
-   ./mvnw.cmd clean compile -Dbook=<file-with-extn> -Durl="<website-url>"
+   ./mvnw.cmd clean compile test -P init -Dtestng.dtd.http=true -Dbook=<file-with-extn> -Durl="<website-url>"
    ```
 
 #### Mac Execution
@@ -37,12 +38,12 @@
     ```
 - Execute the following command:
    ```sh
-   ./mvnw clean compile -Dbook=<file-with-extn> -Durl="<website-url>"
+   ./mvnw clean compile test -P init -Dtestng.dtd.http=true -Dbook=<file-with-extn> -Durl="<website-url>"
    ```
 
 ##### Example
 - Consider file name is `POC.xlsx` and website url is `https://www.abc.com/symbol=`
 - The execution command for mac would be-
     ```sh
-    ./mvnw clean compile -Dbook=POC.xlsx -Durl="https://www.abc.com?symbol="
+    ./mvnw clean compile test -P init -Dtestng.dtd.http=true -Dbook=POC.xlsx -Durl="https://www.abc.com?symbol="
     ```
