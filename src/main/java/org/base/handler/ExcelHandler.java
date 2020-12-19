@@ -8,10 +8,11 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.poi.hssf.usermodel.HSSFEvaluationWorkbook;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.format.CellFormat;
-import org.apache.poi.ss.formula.FormulaParser;
-import org.apache.poi.ss.formula.FormulaRenderer;
-import org.apache.poi.ss.formula.FormulaType;
+import org.apache.poi.ss.formula.*;
+import org.apache.poi.ss.formula.ptg.AreaPtgBase;
 import org.apache.poi.ss.formula.ptg.Ptg;
 import org.apache.poi.ss.formula.ptg.RefPtgBase;
 import org.apache.poi.ss.usermodel.Cell;
@@ -435,6 +436,8 @@ public class ExcelHandler {
         Row row = sheet.createRow(this.totalRowCount + 1);
 
         for (int colIndex = 0; colIndex < this.totalColumnCount; colIndex++) {
+
+            System.out.println("colIndex: ");
             // ADD DATA FROM LIST TILL COL NO 13
             if (colIndex < 13) {
                 row.createCell(colIndex).setCellValue(data.get(colIndex));
@@ -445,44 +448,56 @@ public class ExcelHandler {
                     // COPY CELL TYPE FROM LAST ROW
                     Row rowTemp = sheet.getRow(totalRowCount);
                     String cellFormula = rowTemp.getCell(colIndex).getCellFormula();
-                    System.out.println("colIndex: " + colIndex + " | cellFormula: " + cellFormula);
-                    cellFormula = copyFormula(cellFormula);
-                    row.createCell(colIndex).setCellFormula(cellFormula);
+                    cellFormula = copyFormula(cellFormula, 0, 1);
+                    Cell c = row.createCell(colIndex);
+                    c.setBlank();
+                    c.setCellFormula(cellFormula);
                 }
             }
         } // FOR END
     }
 
-    public String copyFormula(String cellFormula){
-        try {
-            XSSFEvaluationWorkbook workbookWrapper =
-                    XSSFEvaluationWorkbook.create((XSSFWorkbook) workbook);
-            /* parse formula */
-            Ptg[] ptgs = FormulaParser.parse(cellFormula, workbookWrapper,
-                    FormulaType.CELL, sheetIndex /*sheet index*/ );
+    private String copyFormula(String formula, int coldiff, int rowdiff) {
 
-            System.out.println("\n- - - - - - Updating Formula - - - ");
-            System.out.println("Old: " + cellFormula);
-            /* re-calculate cell references */
-            for( Ptg ptg  : ptgs ) {
-                if( ptg instanceof RefPtgBase)    //base class for cell reference "things"
-                {
-                    RefPtgBase ref = (RefPtgBase)ptg;
-                    if( ref.isColRelative() )
-                        ref.setColumn( ref.getColumn() + 0 );
-                    if( ref.isRowRelative() )
-                        ref.setRow( ref.getRow() + 1 );
-//                    System.out.println(" ref: " + ref);
-                }
-            } // FOR END
-            cellFormula = FormulaRenderer.toFormulaString(workbookWrapper, ptgs);
-            System.out.println("NEW: " + cellFormula);
-            System.out.println("- - - - - - - - - - - - - - - -\n");
-        } catch (Exception e) {
-            System.out.println(" Err while copying formula" );
-            e.printStackTrace();
+        EvaluationWorkbook evaluationWorkbook = null;
+        if (workbook instanceof HSSFWorkbook) {
+            evaluationWorkbook = HSSFEvaluationWorkbook.create((HSSFWorkbook) workbook);
+        } else if (workbook instanceof XSSFWorkbook) {
+            evaluationWorkbook = XSSFEvaluationWorkbook.create((XSSFWorkbook) workbook);
         }
-        return cellFormula;
+
+        Ptg[] ptgs = FormulaParser.parse(formula, (FormulaParsingWorkbook) evaluationWorkbook,
+                FormulaType.CELL, sheet.getWorkbook().getSheetIndex(sheet));
+
+        System.out.println("\n- - - - - - Updating Formula - - - ");
+        System.out.println("Old: " + formula);
+        formula = null;
+        for (int i = 0; i < ptgs.length; i++) {
+            if (ptgs[i] instanceof RefPtgBase) { // base class for cell references
+                System.out.println("cell ref ");
+                RefPtgBase ref = (RefPtgBase) ptgs[i];
+                if (ref.isColRelative())
+                    ref.setColumn(ref.getColumn() + coldiff);
+                if (ref.isRowRelative())
+                    ref.setRow(ref.getRow() + rowdiff);
+            }
+            else if (ptgs[i] instanceof AreaPtgBase) { // base class for range references
+                System.out.println("range ref ");
+                AreaPtgBase ref = (AreaPtgBase) ptgs[i];
+                if (ref.isFirstColRelative())
+                    ref.setFirstColumn(ref.getFirstColumn() + coldiff);
+                if (ref.isLastColRelative())
+                    ref.setLastColumn(ref.getLastColumn() + coldiff);
+                if (ref.isFirstRowRelative())
+                    ref.setFirstRow(ref.getFirstRow() + rowdiff);
+                if (ref.isLastRowRelative())
+                    ref.setLastRow(ref.getLastRow() + rowdiff);
+            }
+        } // FOR END
+        formula = FormulaRenderer.toFormulaString((FormulaRenderingWorkbook)evaluationWorkbook, ptgs);
+        System.out.println("NEW: " + formula);
+        System.out.println("- - - - - - - - - - - - - - - -\n");
+        return formula;
     }
 
     public void saveFile(String filePath, String fileName) {
